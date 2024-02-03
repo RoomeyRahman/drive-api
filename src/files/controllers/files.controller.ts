@@ -96,6 +96,7 @@ export class FilesController {
     @User() user: IUser,
   ) {
     try {
+      query.user = user.id;
       return this.filesService.findAll(query);
     } catch (err) {
       throw new HttpException(
