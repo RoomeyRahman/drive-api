@@ -2,6 +2,7 @@ import { Entity, Column, OneToMany } from 'typeorm';
 import { IsNotEmpty, IsEmail } from 'class-validator';
 import { BaseEntity } from '../../common/entities';
 import { Folder } from '../../folders/entities/folder.entity';
+import { File } from '../../files/entities/files.entity';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -22,4 +23,7 @@ export class User extends BaseEntity {
 
     @OneToMany(() => Folder, folder => folder.user)
     folders: Folder[];
+
+    @OneToMany(() => File, file => file.user)
+    files: File[];
 }

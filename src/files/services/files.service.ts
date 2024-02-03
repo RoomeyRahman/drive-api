@@ -5,12 +5,15 @@ import {
   HttpStatus,
   Logger
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AwsS3Service } from '../services';
 import { CreateFileDto } from '../dto/create-file.dto';
 import { File } from '../entities/files.entity';
 import { UpdateFileDto } from '../dto/update-file.dto';
+import { IUser } from '../../users/interfaces/user.interface';
+import { User } from '../../users/entities/user.entity';
+import { Folder } from '../../folders/entities/folder.entity';
 
 @Injectable()
 export class FilesService {
@@ -24,6 +27,10 @@ export class FilesService {
     @InjectRepository(File)
     private readonly repo: Repository<File>,
     private readonly awsS3Service: AwsS3Service,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(Folder)
+    private readonly folderRepo: Repository<Folder>,
   ) { }
 
   /**
@@ -43,8 +50,6 @@ export class FilesService {
     );
     response.Location = awsLocation.Location;
     return response;
-
-
   }
 
   /**
@@ -54,12 +59,13 @@ export class FilesService {
    */
   async create(
     data: CreateFileDto,
+    user: IUser,
     file: Express.Multer.File
   ) {
     try {
       const fileLocation = await this.upload(file);
       data.url = fileLocation.Location;
-      return await this.repo.save(data);
+      return await this.repo.save({ ...data, user: user });
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
@@ -102,7 +108,35 @@ export class FilesService {
    */
   async findAll(query) {
     try {
-      const queryParam = query && query?.filter ? JSON.parse(query.filter) : {};
+      query && query?.filter && (query.filter = JSON.parse(query.filter));
+      let queryParam: any = {};
+      if (query && query?.user) {
+        queryParam.user = await this.userRepo.findOne({
+          where: {
+            id: query.user
+          }
+        })
+      }
+      if (query && query?.filter) {
+        if (query.filter?.folder === null) {
+          query.filter.folder = IsNull();
+        } else if (query.filter?.folder) {
+          query.filter.folder = await this.folderRepo.findOne({
+            where: {
+              id: query.filter.folder
+            }
+          })
+        }
+      }
+
+
+      if (query && query?.filter) {
+        queryParam = {
+          ...queryParam,
+          ...query.filter,
+        }
+      }
+
       return await this.repo.find({
         where: queryParam,
         relations: ['folder'],

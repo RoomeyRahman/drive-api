@@ -74,10 +74,11 @@ export class FilesController {
   @Post()
   async create(
     @Body() data: CreateFileDto,
+    @User() user: IUser,
     @UploadedFile() file: Express.Multer.File,
   ) {
     try {
-      return await this.filesService.create(data, file);
+      return await this.filesService.create(data, user, file);
     } catch (err) {
       throw new HttpException(err, err.status || HttpStatus.BAD_REQUEST);
     }
