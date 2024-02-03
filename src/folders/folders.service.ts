@@ -4,12 +4,13 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Folder } from './entities/folder.entity';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
 import { IUser } from '../users/interfaces/user.interface';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class FoldersService {
@@ -20,6 +21,8 @@ export class FoldersService {
   constructor(
     @InjectRepository(Folder)
     private readonly repo: Repository<Folder>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) { }
 
   /**
@@ -42,7 +45,36 @@ export class FoldersService {
    */
   async findAll(query) {
     try {
-      const queryParam = query && query?.filter ? JSON.parse(query.filter) : {};
+      query && query?.filter && (query.filter = JSON.parse(query.filter));
+      let queryParam: any = {};
+      if (query && query?.user) {
+        queryParam.user = await this.userRepo.findOne({
+          where: {
+            id: query.user
+          }
+        })
+      }
+
+      if (query && query?.filter) {
+        if (query.filter?.parent === null) {
+          query.filter.parent = IsNull();
+        } else if (query.filter?.parent) {
+          query.filter.parent = await this.repo.findOne({
+            where: {
+              id: query.filter.parent
+            }
+          })
+        }
+      }
+
+
+      if (query && query?.filter) {
+        queryParam = {
+          ...queryParam,
+          ...query.filter,
+        }
+      }
+
       return await this.repo.find({
         where: queryParam,
         relations: ['user', 'parent', 'children'],

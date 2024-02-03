@@ -14,6 +14,6 @@ export class File extends BaseEntity {
     @IsNotEmpty()
     url: string;
 
-    @ManyToOne(() => Folder, folder => folder.id)
+    @ManyToOne(() => Folder, folder => folder.files)
     folder: Folder;
 }

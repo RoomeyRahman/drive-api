@@ -20,6 +20,6 @@ export class User extends BaseEntity {
     @Column({ nullable: true, type: 'varchar', length: 50 })
     lastName: string;
 
-    @OneToMany(() => Folder, folder => folder.id)
+    @OneToMany(() => Folder, folder => folder.user)
     folders: Folder[];
 }

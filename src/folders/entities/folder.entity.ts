@@ -7,6 +7,7 @@ import {
 import { IsNotEmpty } from 'class-validator';
 import { BaseEntity } from '../../common/entities';
 import { User } from '../../users/entities/user.entity';
+import { File } from '../../files/entities/files.entity';
 
 @Entity({ name: 'folder' })
 export class Folder extends BaseEntity {
@@ -20,6 +21,9 @@ export class Folder extends BaseEntity {
     @OneToMany(() => Folder, folder => folder.parent)
     children: Folder[];
 
-    @ManyToOne(() => User, user => user.id)
+    @ManyToOne(() => User, user => user.folders)
     user: User;
+
+    @OneToMany(() => File, file => file.folder)
+    files: File[];
 }
